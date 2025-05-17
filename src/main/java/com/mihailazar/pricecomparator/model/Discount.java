@@ -21,4 +21,5 @@ public class Discount {
     private LocalDate fromDate;
     private LocalDate toDate;
     private int percentage;
+    private String source;
 }

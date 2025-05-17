@@ -22,7 +22,13 @@ public class DiscountController {
     }
 
     @GetMapping("/load")
-    public List<Discount> loadDiscoutns(@RequestParam("file") String file) {
-        return discountService.loadDiscountsFromCsv(file);
+    public List<Discount> loadDiscoutns(@RequestParam("file") String file,
+                                        @RequestParam("source") String source) {
+        return discountService.loadDiscountsFromCsv(file, source);
+    }
+
+    @GetMapping("/best")
+    public List<Discount> getBestDiscounts(@RequestParam(value = "limit", defaultValue = "10") int limit) {
+        return discountService.getBestDiscounts(limit);
     }
 }
