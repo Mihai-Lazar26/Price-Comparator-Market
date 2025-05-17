@@ -1,12 +1,12 @@
 package com.mihailazar.pricecomparator.controller;
 
+import com.mihailazar.pricecomparator.model.OptimizedProductMatch;
 import com.mihailazar.pricecomparator.model.Product;
+import com.mihailazar.pricecomparator.model.ShoppingItemRequest;
+import com.mihailazar.pricecomparator.service.PriceComparatorService;
 import com.mihailazar.pricecomparator.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,14 +15,22 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final PriceComparatorService priceComparatorService;
 
     @Autowired
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, PriceComparatorService priceComparatorService) {
         this.productService = productService;
+        this.priceComparatorService = priceComparatorService;
     }
 
     @GetMapping("/load")
-    public List<Product> loadProducts(@RequestParam("file") String file) {
-        return productService.loadProductsFromCsv(file);
+    public List<Product> loadProducts(@RequestParam("file") String file,
+                                      @RequestParam("source") String source) {
+        return productService.loadProductsFromCsv(file, source);
+    }
+
+    @PostMapping("/optimize-cart")
+    public List<OptimizedProductMatch> optimizeCart(@RequestBody List<ShoppingItemRequest> items) {
+        return priceComparatorService.getOptimizedShoppingCart(items);
     }
 }

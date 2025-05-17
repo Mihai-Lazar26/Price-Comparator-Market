@@ -15,4 +15,5 @@ public class Product {
     private String unit;
     private double price;
     private String currency;
+    private String source;
 }

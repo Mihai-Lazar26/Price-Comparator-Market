@@ -15,7 +15,7 @@ import java.util.List;
 @Service
 public class ProductService {
 
-    public List<Product> loadProductsFromCsv(String path) {
+    public List<Product> loadProductsFromCsv(String path, String source) {
         List<Product> products = new ArrayList<>();
         InputStream is = getClass().getClassLoader().getResourceAsStream(path);
 
@@ -50,6 +50,7 @@ public class ProductService {
                             .unit(line[5])
                             .price(Double.parseDouble(line[6]))
                             .currency(line[7])
+                            .source(source)
                             .build();
                     products.add(p);
                 }
