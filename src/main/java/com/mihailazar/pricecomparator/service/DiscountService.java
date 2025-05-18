@@ -87,4 +87,14 @@ public class DiscountService {
 
         return discounts;
     }
+
+    public List<Discount> getNewDiscounts() {
+//        LocalDate today = LocalDate.now();
+        LocalDate totday = LocalDate.of(2025, 5, 6);
+        LocalDate yesterday = totday.minusDays(1);
+
+        return allDiscounts.stream()
+                .filter(d -> !d.getFromDate().isBefore(yesterday))
+                .collect(Collectors.toList());
+    }
 }

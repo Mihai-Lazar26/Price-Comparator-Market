@@ -31,4 +31,9 @@ public class DiscountController {
     public List<Discount> getBestDiscounts(@RequestParam(value = "limit", defaultValue = "10") int limit) {
         return discountService.getBestDiscounts(limit);
     }
+
+    @GetMapping("/new")
+    public List<Discount> getNewDiscounts() {
+        return discountService.getNewDiscounts();
+    }
 }
