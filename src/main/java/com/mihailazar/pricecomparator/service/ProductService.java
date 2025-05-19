@@ -2,20 +2,38 @@ package com.mihailazar.pricecomparator.service;
 
 import com.mihailazar.pricecomparator.model.PriceSnapshot;
 import com.mihailazar.pricecomparator.model.Product;
+import com.mihailazar.pricecomparator.model.RecommendedProduct;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
+
+    private final List<Product> allProducts = new ArrayList<>();
+
+    @PostConstruct
+    public void init() {
+        allProducts.addAll(loadProductsFromCsv("products-prices/lidl_2025-05-01.csv", "Lidl"));
+        allProducts.addAll(loadProductsFromCsv("products-prices/kaufland_2025-05-01.csv", "Kaufland"));
+        allProducts.addAll(loadProductsFromCsv("products-prices/profi_2025-05-01.csv", "Profi"));
+    }
+
+    public List<Product> getAllProducts() {
+        return allProducts;
+    }
 
     public List<Product> loadProductsFromCsv(String path, String source) {
         List<Product> products = new ArrayList<>();
@@ -109,6 +127,38 @@ public class ProductService {
         }
 
         return history;
+    }
+
+    public List<RecommendedProduct> getRecommendations(String productId) {
+        Optional<Product> reference = allProducts.stream()
+                .filter(p -> p.getId().equalsIgnoreCase(productId))
+                .findFirst();
+
+        if (reference.isEmpty()) return List.of();
+
+        Product ref = reference.get();
+        double refUnitPrice = ref.getPrice() / ref.getQuantity();
+
+        return allProducts.stream()
+                .filter(p -> !p.getId().equalsIgnoreCase(ref.getId()))
+                .filter(p -> p.getCategory().equalsIgnoreCase(ref.getCategory()))
+                .filter(p -> p.getUnit().equalsIgnoreCase(ref.getUnit()))
+                .filter(p -> (p.getPrice() / p.getQuantity()) < refUnitPrice)
+                .sorted(Comparator.comparingDouble(p -> p.getPrice() / p.getQuantity()))
+                .limit(5)
+                .map(p -> RecommendedProduct.builder()
+                        .id(p.getId())
+                        .name(p.getName())
+                        .brand(p.getBrand())
+                        .category(p.getCategory())
+                        .quantity(p.getQuantity())
+                        .unit(p.getUnit())
+                        .price(p.getPrice())
+                        .unitPrice(p.getPrice() / p.getQuantity())
+                        .currency(p.getCurrency())
+                        .source(p.getSource())
+                        .build())
+                .collect(Collectors.toList());
     }
 
 }

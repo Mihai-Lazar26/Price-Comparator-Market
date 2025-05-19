@@ -1,9 +1,6 @@
 package com.mihailazar.pricecomparator.controller;
 
-import com.mihailazar.pricecomparator.model.OptimizedProductMatch;
-import com.mihailazar.pricecomparator.model.PriceSnapshot;
-import com.mihailazar.pricecomparator.model.Product;
-import com.mihailazar.pricecomparator.model.ShoppingItemRequest;
+import com.mihailazar.pricecomparator.model.*;
 import com.mihailazar.pricecomparator.service.PriceComparatorService;
 import com.mihailazar.pricecomparator.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,5 +38,10 @@ public class ProductController {
                                                @RequestParam(value = "category",required = false) String category,
                                                @RequestParam(value = "brand",required = false) String brand) {
         return productService.getPriceHistory(productId, store, category, brand);
+    }
+
+    @GetMapping("/recommendations")
+    public List<RecommendedProduct> getRecommendations(@RequestParam(value = "productId") String productId) {
+        return productService.getRecommendations(productId);
     }
 }
