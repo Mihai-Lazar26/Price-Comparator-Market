@@ -1,5 +1,6 @@
 package com.mihailazar.pricecomparator.service;
 
+import com.mihailazar.pricecomparator.model.OptimizedCartResponse;
 import com.mihailazar.pricecomparator.model.OptimizedProductMatch;
 import com.mihailazar.pricecomparator.model.Product;
 import com.mihailazar.pricecomparator.model.ShoppingItemRequest;
@@ -26,8 +27,8 @@ public class PriceComparatorService {
         allProducts.addAll(productService.loadProductsFromCsv("products-prices/profi_2025-05-01.csv", "Profi"));
     }
 
-    public List<OptimizedProductMatch> getOptimizedShoppingCart(List<ShoppingItemRequest> requests) {
-        List<OptimizedProductMatch> result = new ArrayList<>();
+    public OptimizedCartResponse getOptimizedShoppingCart(List<ShoppingItemRequest> requests) {
+        List<OptimizedProductMatch> optimizedItems = new ArrayList<>();
 
         for (ShoppingItemRequest req : requests) {
             Optional<Product> cheapestMatch = allProducts.stream()
@@ -37,7 +38,7 @@ public class PriceComparatorService {
             cheapestMatch.ifPresent(p -> {
                 double unitPrice = p.getPrice() / p.getQuantity();
                 double total = unitPrice * req.getQuantity();
-                result.add(OptimizedProductMatch.builder()
+                optimizedItems.add(OptimizedProductMatch.builder()
                                 .productId(p.getId())
                                 .name(p.getName())
                                 .brand(p.getBrand())
@@ -49,6 +50,14 @@ public class PriceComparatorService {
                         .build());
             });
         }
-        return result;
+
+        double total = optimizedItems.stream()
+                .mapToDouble(OptimizedProductMatch::getTotalPrice)
+                .sum();
+
+        return OptimizedCartResponse.builder()
+                .total(total)
+                .items(optimizedItems)
+                .build();
     }
 }

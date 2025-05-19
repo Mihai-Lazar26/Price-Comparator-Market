@@ -28,7 +28,7 @@ public class ProductController {
     }
 
     @PostMapping("/optimize-cart")
-    public List<OptimizedProductMatch> optimizeCart(@RequestBody List<ShoppingItemRequest> items) {
+    public OptimizedCartResponse optimizeCart(@RequestBody List<ShoppingItemRequest> items) {
         return priceComparatorService.getOptimizedShoppingCart(items);
     }
 
