@@ -16,22 +16,16 @@ import java.util.Optional;
 public class PriceComparatorService {
     private final ProductService productService;
 
-    private final List<Product> allProducts = new ArrayList<>();
-
     @Autowired
     public PriceComparatorService(ProductService productService) {
         this.productService = productService;
-
-        allProducts.addAll(productService.loadProductsFromCsv("products-prices/lidl_2025-05-01.csv", "Lidl"));
-        allProducts.addAll(productService.loadProductsFromCsv("products-prices/kaufland_2025-05-01.csv", "Kaufland"));
-        allProducts.addAll(productService.loadProductsFromCsv("products-prices/profi_2025-05-01.csv", "Profi"));
     }
 
     public OptimizedCartResponse getOptimizedShoppingCart(List<ShoppingItemRequest> requests) {
         List<OptimizedProductMatch> optimizedItems = new ArrayList<>();
 
         for (ShoppingItemRequest req : requests) {
-            Optional<Product> cheapestMatch = allProducts.stream()
+            Optional<Product> cheapestMatch = productService.getAllProducts().stream()
                     .filter(p -> p.getName().equalsIgnoreCase(req.getName()) && p.getUnit().equalsIgnoreCase(req.getUnit()))
                     .min(Comparator.comparingDouble(Product::getPrice));
 

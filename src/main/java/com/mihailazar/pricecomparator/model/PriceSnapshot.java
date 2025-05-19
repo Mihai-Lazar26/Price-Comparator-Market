@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public class PriceSnapshot {
     private String productId;
     private String name;
+    private String brand;
     private double price;
     private LocalDate date;
     private String source;

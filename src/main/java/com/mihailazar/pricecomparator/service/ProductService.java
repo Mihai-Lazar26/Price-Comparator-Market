@@ -8,15 +8,14 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import jakarta.annotation.PostConstruct;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,12 +23,41 @@ public class ProductService {
 
     private final List<Product> allProducts = new ArrayList<>();
 
+    private String findMostRecentDate() {
+        try {
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource[] resources = resolver.getResources("classpath:products-prices/*.csv");
+            return Arrays.stream(resources)
+                    .map(Resource::getFilename)
+                    .filter(Objects::nonNull)
+                    .map(name -> name.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1"))
+                    .max(String::compareTo)
+                    .orElse(null);
+        } catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @PostConstruct
     public void init() {
-        allProducts.addAll(loadProductsFromCsv("products-prices/lidl_2025-05-01.csv", "Lidl"));
-        allProducts.addAll(loadProductsFromCsv("products-prices/kaufland_2025-05-01.csv", "Kaufland"));
-        allProducts.addAll(loadProductsFromCsv("products-prices/profi_2025-05-01.csv", "Profi"));
+        String latestDate = findMostRecentDate();
+        if (latestDate == null) return;
+
+        List<String> sources = List.of("Lidl", "Kaufland", "Profi");
+
+        for (String source : sources) {
+            String file = "products-prices/" + source.toLowerCase() + "_" + latestDate + ".csv";
+            allProducts.addAll(loadProductsFromCsv(file, source));
+        }
     }
+
+//    @PostConstruct
+//    public void init() {
+//        allProducts.addAll(loadProductsFromCsv("products-prices/lidl_2025-05-01.csv", "Lidl"));
+//        allProducts.addAll(loadProductsFromCsv("products-prices/kaufland_2025-05-01.csv", "Kaufland"));
+//        allProducts.addAll(loadProductsFromCsv("products-prices/profi_2025-05-01.csv", "Profi"));
+//    }
 
     public List<Product> getAllProducts() {
         return allProducts;
@@ -81,6 +109,22 @@ public class ProductService {
         return products;
     }
 
+    private List<String> getAllProductCsvPaths() {
+        List<String> filePaths = new ArrayList<>();
+        try {
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource[] resources = resolver.getResources("classpath:products-prices/*.csv");
+
+            for (Resource resource : resources) {
+                String path = "products-prices/" + resource.getFilename();
+                filePaths.add(path);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return filePaths;
+    }
+
     private String extractSource(String filePath) {
         if (filePath.contains("lidl")) return "Lidl";
         if (filePath.contains("kaufland")) return "Kaufland";
@@ -96,14 +140,8 @@ public class ProductService {
     public List<PriceSnapshot> getPriceHistory(String productId, String store, String category, String brand) {
         List<PriceSnapshot> history = new ArrayList<>();
 
-        List<String> sources = List.of(
-                "products-prices/lidl_2025-05-01.csv",
-                "products-prices/lidl_2025-05-08.csv",
-                "products-prices/profi_2025-05-01.csv",
-                "products-prices/profi_2025-05-08.csv",
-                "products-prices/kaufland_2025-05-01.csv",
-                "products-prices/kaufland_2025-05-08.csv"
-        );
+        List<String> sources = getAllProductCsvPaths();
+
 
         for (String file : sources) {
             String source = extractSource(file);
@@ -120,6 +158,7 @@ public class ProductService {
                     .ifPresent(p -> history.add(PriceSnapshot.builder()
                                     .productId(p.getId())
                                     .name(p.getName())
+                                    .brand(p.getBrand())
                                     .price(p.getPrice())
                                     .date(date)
                                     .source(source)
