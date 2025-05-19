@@ -1,6 +1,7 @@
 package com.mihailazar.pricecomparator.controller;
 
 import com.mihailazar.pricecomparator.model.OptimizedProductMatch;
+import com.mihailazar.pricecomparator.model.PriceSnapshot;
 import com.mihailazar.pricecomparator.model.Product;
 import com.mihailazar.pricecomparator.model.ShoppingItemRequest;
 import com.mihailazar.pricecomparator.service.PriceComparatorService;
@@ -32,5 +33,13 @@ public class ProductController {
     @PostMapping("/optimize-cart")
     public List<OptimizedProductMatch> optimizeCart(@RequestBody List<ShoppingItemRequest> items) {
         return priceComparatorService.getOptimizedShoppingCart(items);
+    }
+
+    @GetMapping("/history")
+    public List<PriceSnapshot> getPriceHistory(@RequestParam(value = "productId", required = false) String productId,
+                                               @RequestParam(value = "store", required = false) String store,
+                                               @RequestParam(value = "category",required = false) String category,
+                                               @RequestParam(value = "brand",required = false) String brand) {
+        return productService.getPriceHistory(productId, store, category, brand);
     }
 }
