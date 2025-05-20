@@ -21,6 +21,10 @@ public class PriceComparatorService {
         this.productService = productService;
     }
 
+    /**
+     * Găsește cel mai ieftin produs care are același nume și unitate,
+     * și calculează prețul în funcție de cantitatea cerută.
+     */
     public OptimizedCartResponse getOptimizedShoppingCart(List<ShoppingItemRequest> requests) {
         List<OptimizedProductMatch> optimizedItems = new ArrayList<>();
 
@@ -30,6 +34,7 @@ public class PriceComparatorService {
                     .min(Comparator.comparingDouble(Product::getPrice));
 
             cheapestMatch.ifPresent(p -> {
+                // Preț pe unitate = preț total împărțit la cantitate vândută
                 double unitPrice = p.getPrice() / p.getQuantity();
                 double total = unitPrice * req.getQuantity();
                 optimizedItems.add(OptimizedProductMatch.builder()

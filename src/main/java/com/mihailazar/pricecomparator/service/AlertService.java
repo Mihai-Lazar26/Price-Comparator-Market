@@ -28,6 +28,10 @@ public class AlertService {
         alerts.removeIf(alert -> alert.getProductId().equalsIgnoreCase(productId));
     }
 
+    /**
+     * Verifică toate alertele salvate și returnează produsele
+     * care au un preț mai mic sau egal cu pragul specificat în alertă.
+     */
     public List<Product> getActiveAlerts() {
         List<Product> allProducts = productService.getAllProducts();
 

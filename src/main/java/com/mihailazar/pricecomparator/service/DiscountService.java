@@ -22,26 +22,13 @@ public class DiscountService {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final List<Discount> allDiscounts = new ArrayList<>();
 
-    private String findMostRecentDiscountDate() {
-        try {
-            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-            Resource[] resources = resolver.getResources("classpath:discounts/*_discounts_*.csv");
-
-            return Arrays.stream(resources)
-                    .map(Resource::getFilename)
-                    .filter(Objects::nonNull)
-                    .map(name -> name.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1"))
-                    .max(String::compareTo)
-                    .orElse(null);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
+    /**
+     * Încarcă doar produsele din cea mai recentă zi disponibilă
+     * pentru a compara reducerile sincronizate între magazine.
+     * Fișierele sunt detectate din folderul /resources/discounts/.
+     */
     @PostConstruct
-    public void init() {
+    public void loadLatestDiscounts() {
         String latestDate = findMostRecentDiscountDate();
         if (latestDate == null) return;
 
@@ -63,13 +50,10 @@ public class DiscountService {
         return allDiscounts;
     }
 
-    public List<Discount> getBestDiscounts(int limit) {
-        return allDiscounts.stream()
-                .sorted(Comparator.comparingInt(Discount::getPercentage).reversed())
-                .limit(limit)
-                .collect(Collectors.toList());
-    }
-
+    /**
+     * Încarcă produsele dintr-un fișier CSV specific și adaugă sursa (magazinul).
+     * Formatul așteptat este delimitat prin `;` și trebuie să respecte ordinea câmpurilor din model.
+     */
     public List<Discount> loadDiscountsFromCsv(String path, String source) {
         List<Discount> discounts = new ArrayList<>();
         InputStream is = getClass().getClassLoader().getResourceAsStream(path);
@@ -119,6 +103,21 @@ public class DiscountService {
         return discounts;
     }
 
+    /**
+     * Returnează cele mai mari reduceri, in functie de limita,
+     * sortate descrescător după procent.
+     */
+    public List<Discount> getBestDiscounts(int limit) {
+        return allDiscounts.stream()
+                .sorted(Comparator.comparingInt(Discount::getPercentage).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returnează reducerile apărute în ultimele
+     * 24 de ore față de data de referință.
+     */
     public List<Discount> getNewDiscounts() {
 //        LocalDate today = LocalDate.now();
         LocalDate totday = LocalDate.of(2025, 5, 11);
@@ -128,4 +127,27 @@ public class DiscountService {
                 .filter(d -> !d.getFromDate().isBefore(yesterday))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Identifică cea mai recentă dată disponibilă din fișierele CSV
+     * pe baza numelui fișierului în formatul: store_discounts_yyyy-MM-dd.csv
+     */
+    private String findMostRecentDiscountDate() {
+        try {
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource[] resources = resolver.getResources("classpath:discounts/*_discounts_*.csv");
+
+            return Arrays.stream(resources)
+                    .map(Resource::getFilename)
+                    .filter(Objects::nonNull)
+                    .map(name -> name.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1"))
+                    .max(String::compareTo)
+                    .orElse(null);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }

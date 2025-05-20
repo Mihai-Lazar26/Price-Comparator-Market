@@ -23,24 +23,13 @@ public class ProductService {
 
     private final List<Product> allProducts = new ArrayList<>();
 
-    private String findMostRecentDate() {
-        try {
-            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-            Resource[] resources = resolver.getResources("classpath:products-prices/*.csv");
-            return Arrays.stream(resources)
-                    .map(Resource::getFilename)
-                    .filter(Objects::nonNull)
-                    .map(name -> name.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1"))
-                    .max(String::compareTo)
-                    .orElse(null);
-        } catch(Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
+    /**
+     * Încarcă doar produsele din cea mai recentă zi disponibilă
+     * pentru a compara prețuri sincronizate între magazine.
+     * Fișierele sunt detectate din folderul /resources/products-prices/.
+     */
     @PostConstruct
-    public void init() {
+    public void loadLatestProducts() {
         String latestDate = findMostRecentDate();
         if (latestDate == null) return;
 
@@ -63,6 +52,10 @@ public class ProductService {
         return allProducts;
     }
 
+    /**
+     * Încarcă produsele dintr-un fișier CSV specific și adaugă sursa (magazinul).
+     * Formatul așteptat este delimitat prin `;` și trebuie să respecte ordinea câmpurilor din model.
+     */
     public List<Product> loadProductsFromCsv(String path, String source) {
         List<Product> products = new ArrayList<>();
         InputStream is = getClass().getClassLoader().getResourceAsStream(path);
@@ -109,34 +102,10 @@ public class ProductService {
         return products;
     }
 
-    private List<String> getAllProductCsvPaths() {
-        List<String> filePaths = new ArrayList<>();
-        try {
-            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-            Resource[] resources = resolver.getResources("classpath:products-prices/*.csv");
-
-            for (Resource resource : resources) {
-                String path = "products-prices/" + resource.getFilename();
-                filePaths.add(path);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return filePaths;
-    }
-
-    private String extractSource(String filePath) {
-        if (filePath.contains("lidl")) return "Lidl";
-        if (filePath.contains("kaufland")) return "Kaufland";
-        if (filePath.contains("profi")) return "Profi";
-        return "Unknown";
-    }
-
-    private LocalDate extractDate(String filePath) {
-        String dateStr = filePath.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1");
-        return LocalDate.parse(dateStr);
-    }
-
+    /**
+     * Generează istoricul de preț pentru un produs (sau filtrat după brand/categorie/magazin),
+     * căutând în toate fișierele CSV disponibile din toate zilele.
+     */
     public List<PriceSnapshot> getPriceHistory(String productId, String store, String category, String brand) {
         List<PriceSnapshot> history = new ArrayList<>();
 
@@ -168,6 +137,10 @@ public class ProductService {
         return history;
     }
 
+    /**
+     * Recomandă produse din aceeași categorie și unitate
+     * care au un preț pe unitate mai mic decât produsul de referință.
+     */
     public List<RecommendedProduct> getRecommendations(String productId) {
         Optional<Product> reference = allProducts.stream()
                 .filter(p -> p.getId().equalsIgnoreCase(productId))
@@ -176,6 +149,7 @@ public class ProductService {
         if (reference.isEmpty()) return List.of();
 
         Product ref = reference.get();
+        // Preț pe unitate = preț total împărțit la cantitate vândută
         double refUnitPrice = ref.getPrice() / ref.getQuantity();
 
         return allProducts.stream()
@@ -198,6 +172,65 @@ public class ProductService {
                         .source(p.getSource())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Identifică cea mai recentă dată disponibilă din fișierele CSV
+     * pe baza numelui fișierului în formatul: store_yyyy-MM-dd.csv
+     */
+    private String findMostRecentDate() {
+        try {
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource[] resources = resolver.getResources("classpath:products-prices/*.csv");
+            return Arrays.stream(resources)
+                    .map(Resource::getFilename)
+                    .filter(Objects::nonNull)
+                    .map(name -> name.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1"))
+                    .max(String::compareTo)
+                    .orElse(null);
+        } catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Returnează toate fișierele CSV din folderul /products-prices/
+     */
+    private List<String> getAllProductCsvPaths() {
+        List<String> filePaths = new ArrayList<>();
+        try {
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource[] resources = resolver.getResources("classpath:products-prices/*.csv");
+
+            for (Resource resource : resources) {
+                String path = "products-prices/" + resource.getFilename();
+                filePaths.add(path);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return filePaths;
+    }
+
+    /**
+     * Extrage sursa (magazinul) din numele fișierului CSV.
+     * Exemplu: "lidl_2025-05-01.csv" → "Lidl"
+     */
+    private String extractSource(String filePath) {
+        if (filePath.contains("lidl")) return "Lidl";
+        if (filePath.contains("kaufland")) return "Kaufland";
+        if (filePath.contains("profi")) return "Profi";
+        return "Unknown";
+    }
+
+    /**
+     * Extrage data din numele fișierului.
+     * Exemplu: "lidl_2025-05-01.csv" → LocalDate(2025-05-01)
+     */
+    private LocalDate extractDate(String filePath) {
+        String dateStr = filePath.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1");
+        return LocalDate.parse(dateStr);
     }
 
 }
