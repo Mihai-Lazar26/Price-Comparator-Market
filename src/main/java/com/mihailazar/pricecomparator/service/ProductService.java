@@ -197,7 +197,7 @@ public class ProductService {
     /**
      * Returnează toate fișierele CSV din folderul /products-prices/
      */
-    private List<String> getAllProductCsvPaths() {
+    List<String> getAllProductCsvPaths() {
         List<String> filePaths = new ArrayList<>();
         try {
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -217,7 +217,7 @@ public class ProductService {
      * Extrage sursa (magazinul) din numele fișierului CSV.
      * Exemplu: "lidl_2025-05-01.csv" → "Lidl"
      */
-    private String extractSource(String filePath) {
+    String extractSource(String filePath) {
         if (filePath.contains("lidl")) return "Lidl";
         if (filePath.contains("kaufland")) return "Kaufland";
         if (filePath.contains("profi")) return "Profi";
@@ -228,7 +228,7 @@ public class ProductService {
      * Extrage data din numele fișierului.
      * Exemplu: "lidl_2025-05-01.csv" → LocalDate(2025-05-01)
      */
-    private LocalDate extractDate(String filePath) {
+    LocalDate extractDate(String filePath) {
         String dateStr = filePath.replaceAll(".*_(\\d{4}-\\d{2}-\\d{2})\\.csv", "$1");
         return LocalDate.parse(dateStr);
     }

@@ -119,8 +119,7 @@ public class DiscountService {
      * 24 de ore față de data de referință.
      */
     public List<Discount> getNewDiscounts() {
-//        LocalDate today = LocalDate.now();
-        LocalDate totday = LocalDate.of(2025, 5, 11);
+        LocalDate totday = getToday();
         LocalDate yesterday = totday.minusDays(1);
 
         return allDiscounts.stream()
@@ -148,6 +147,11 @@ public class DiscountService {
             e.printStackTrace();
             return null;
         }
+    }
+
+    LocalDate getToday() {
+//        return LocalDate.now();
+        return LocalDate.of(2025, 5, 11);
     }
 
 }
