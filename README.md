@@ -162,5 +162,5 @@ Unit tests are written for:
 ## 📅 Author
 
 **Mihai Lazăr**  
-Java Software Engineering Student  
+Software Engineering Student  
 📍 Bucharest, Romania  
