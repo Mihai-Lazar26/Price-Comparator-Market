@@ -1,6 +1,6 @@
 # 🛒 Price Comparator – Java Spring Boot App
 
-📍 **Live Demo:** [Watch here](https://youtube.com)  
+📍 **Live Demo:** [Watch here](https://youtu.be/3FauXjIC-Ec) 
 
 This project is a price comparison backend built with **Spring Boot**, designed to:
 
